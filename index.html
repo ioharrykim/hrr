@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HRR | Harry's Running Record</title>
+    <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #165EF0;
+            --secondary-color: #16F0AA;
+            --background-color: #f4f4f4;
+            --text-color: #333;
+            --card-bg: #fff;
+        }
+
+        .dark-mode {
+            --primary-color: #3A7CF4;
+            --secondary-color: #45F4BC;
+            --background-color: #1a1a1a;
+            --text-color: #f4f4f4;
+            --card-bg: #2c2c2c;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            opacity: 0;
+            transform: translateY(-50px);
+            animation: fadeInDown 1s forwards;
+        }
+
+        h1 {
+            font-size: 3.5rem;
+            color: var(--primary-color);
+            margin-top: 3rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .month-accordion {
+            margin-bottom: 1rem;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .month-header {
+            background-color: var(--primary-color);
+            color: #fff;
+            padding: 1rem;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .month-header:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .month-records {
+            display: none;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            padding: 1rem;
+            background-color: var(--card-bg);
+        }
+
+        .month-records.active {
+            display: grid;
+        }
+
+        .record-card {
+            background-color: var(--card-bg);
+            border-radius: 10px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            opacity: 0;
+            transform: translateY(50px) scale(0.9);
+            position: relative;
+        }
+
+        .record-card:hover {
+            transform: translateY(-10px) scale(1.05);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .record-date {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .record-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+        }
+
+        .record-detail {
+            font-size: 0.9rem;
+            transition: transform 0.3s ease;
+        }
+
+        .record-detail:hover {
+            transform: translateX(5px);
+        }
+
+        .record-detail span {
+            font-weight: bold;
+            color: var(--secondary-color);
+        }
+
+        .add-record {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background-color: var(--primary-color);
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        .add-record:hover {
+            transform: scale(1.1) rotate(90deg);
+            background-color: var(--secondary-color);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-content {
+            background-color: var(--card-bg);
+            margin: 15% auto;
+            padding: 2rem;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 500px;
+            transform: scale(0.8);
+            transition: all 0.3s ease;
+        }
+
+        .modal.show {
+            display: block;
+            opacity: 1;
+        }
+
+        .modal.show .modal-content {
+            transform: scale(1);
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        form {
+            display: grid;
+            gap: 1rem;
+        }
+
+        input, button {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: var(--card-bg);
+            color: var(--text-color);
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: var(--secondary-color);
+        }
+
+        #darkModeToggle {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-color);
+        }
+
+        .delete-record {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: none;
+            border: none;
+            font-size: 1rem;
+            cursor: pointer;
+            color: var(--text-color);
+            opacity: 0.5;
+            transition: opacity 0.3s ease;
+        }
+
+        .delete-record:hover {
+            opacity: 1;
+        }
+
+        @keyframes fadeInDown {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>HHR: Harry's Running Record</h1>
+            <p>런린이 러닝 시작: 2024.04-</p>
+        </header>
+        <div id="monthlyRecords">
+            <!-- 월별 기록이 여기에 동적으로 추가됩니다 -->
+        </div>
+    </div>
+
+    <div class="add-record" onclick="openModal()">+</div>
+
+    <div id="recordModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>새 러닝 기록 추가</h2>
+            <form id="recordForm">
+                <input type="date" id="date" required>
+                <input type="text" id="type" placeholder="유형 (예: Long Distance)" required>
+                <input type="number" id="distance" placeholder="거리 (km)" step="0.01" required>
+                <input type="text" id="time" placeholder="시간 (예: 30:00)" required>
+                <input type="text" id="pace" placeholder="페이스 (자동 계산)" readonly>
+                <input type="number" id="avgHR" placeholder="평균 심박수" required>
+                <input type="number" id="maxHR" placeholder="최대 심박수" required>
+                <input type="number" id="cadence" placeholder="케이던스" required>
+                <input type="number" id="calories" placeholder="칼로리">
+                <input type="number" id="elevationGain" placeholder="고도 상승">
+                <input type="number" id="elevationLoss" placeholder="고도 하강">
+                <textarea id="comment" placeholder="코멘트"></textarea>
+                <button type="submit">추가</button>
+            </form>
+        </div>
+    </div>
+
+    <button id="darkModeToggle"><i class="fas fa-moon"></i></button>
+
+    <script>
+        let runningRecords = [
+    { date: '2024-04-16', type: 'Long Distance', distance: 5, time: '29:18', pace: '5:51', avgHR: 172, maxHR: 182, cadence: 164, calories: null, elevationGain: null, elevationLoss: null, comment: '' },
+    { date: '2024-04-29', type: 'Long Distance', distance: 6, time: '37:09', pace: '6:08', avgHR: 178, maxHR: 186, cadence: 178, calories: null, elevationGain: null, elevationLoss: null, comment: '' },
+    { date: '2024-05-01', type: 'Interval', distance: 7.23, time: '55:39', pace: '7:41', avgHR: 155, maxHR: 183, cadence: 138, calories: null, elevationGain: null, elevationLoss: null, comment: '' },
+    { date: '2024-05-06', type: 'Long Distance', distance: 7, time: '39:11', pace: '5:35', avgHR: 178, maxHR: 191, cadence: 178, calories: null, elevationGain: null, elevationLoss: null, comment: '' },
+    { date: '2024-05-08', type: 'Interval', distance: 6, time: '36:18', pace: '6:03', avgHR: 165, maxHR: 175, cadence: 170, calories: null, elevationGain: null, elevationLoss: null, comment: '' },
+    { date: '2024-05-12', type: 'Interval', distance: 8, time: '50:25', pace: '6:18', avgHR: 160, maxHR: 175, cadence: 165, calories: null, elevationGain: null, elevationLoss: null, comment: '' },
+    { date: '2024-05-15', type: 'Interval', distance: 6, time: '38:12', pace: '6:22', avgHR: 168, maxHR: 180, cadence: 173, calories: null, elevationGain: null, elevationLoss: null, comment: '' },
+    { date: '2024-05-20', type: 'Long Distance', distance: 8, time: '50:51', pace: '6:21', avgHR: 155, maxHR: 170, cadence: 165, calories: null, elevationGain: null, elevationLoss: null, comment: '' },
+    { date: '2024-05-27', type: 'Long Distance', distance: 9, time: '56:23', pace: '6:15', avgHR: 160, maxHR: 175, cadence: 170, calories: null, elevationGain: null, elevationLoss: null, comment: '' },
+    { date: '2024-05-29', type: 'Interval', distance: 9.2, time: '1:05:25', pace: '7:06', avgHR: 143, maxHR: 180, cadence: 143, calories: null, elevationGain: null, elevationLoss: null, comment: '' },
+    { date: '2024-06-02', type: '5K Race', distance: 5, time: '26:45', pace: '5:21', avgHR: 172, maxHR: 182, cadence: 174, calories: null, elevationGain: null, elevationLoss: null, comment: '' },
+    { date: '2024-06-07', type: 'Recovery Run', distance: 4.47, time: '29:51', pace: '6:40', avgHR: 143, maxHR: 150, cadence: 175, calories: null, elevationGain: null, elevationLoss: null, comment: '' },
+    { date: '2024-06-09', type: '10K Race', distance: 9.72, time: '54:52', pace: '5:39', avgHR: 168, maxHR: 184, cadence: 174, calories: null, elevationGain: null, elevationLoss: null, comment: '' },
+    { date: '2024-06-10', type: 'Recovery Run', distance: 3.87, time: '35:08', pace: '9:04', avgHR: 117, maxHR: 146, cadence: 136, calories: 254, elevationGain: 20, elevationLoss: 20, comment: '여자친구와 함께한 즐거운 회복런' },
+    { date: '2024-06-12', type: 'Interval Run', distance: 6.44, time: '40:00', pace: '6:12', avgHR: 146, maxHR: 178, cadence: 156, calories: 468, elevationGain: 27, elevationLoss: 28, comment: '마라톤 대회 이후로 성장한 느낌을 받은 러닝' },
+    { date: '2024-06-14', type: 'Interval Run', distance: 7.03, time: '43:30', pace: '6:11', avgHR: 161, maxHR: 188, cadence: 155, calories: 497, elevationGain: 15, elevationLoss: 13, comment: '인터벌 러닝을 통해 페이스를 높이고 체력을 기르는 데 집중한 러닝' },
+    { date: '2024-06-17', type: 'Long Distance', distance: 10, time: '56:42', pace: '5:40', avgHR: 170, maxHR: 191, cadence: 176, calories: 730, elevationGain: 19, elevationLoss: 16, comment: '포기할 순간마다 다시 일어섰고, 마지막까지 내 안의 힘을 발견한 환상적인 컨디션의 러닝' },
+    { date: '2024-06-19', type: 'Recovery Run', distance: 5.13, time: '37:28', pace: '7:18', avgHR: 137, maxHR: 181, cadence: 141, calories: 356, elevationGain: 15, elevationLoss: 15, comment: '여자친구와 함께한 느긋한 리커버리 러닝' },
+    { date: '2024-06-28', type: '5K Run', distance: 5, time: '25:28', pace: '5:06', avgHR: 170, maxHR: 181, cadence: 183, calories: 370, elevationGain: 8, elevationLoss: 11, comment: '오랜만에 빡세게 5km를 뛰며 개인 기록을 세운 러닝' },
+    { date: '2024-07-01', type: 'Long Run', distance: 7.01, time: '38:02', pace: '5:26', avgHR: 171, maxHR: 179, cadence: 180, calories: 515, elevationGain: 12, elevationLoss: 11, comment: '꾸준한 페이스로 7km를 완주하며 심폐 지구력을 향상시킨 러닝' },
+    { date: '2024-07-07', type: 'Short Rain Run', distance: 3.69, time: '24:48', pace: '6:43', avgHR: 148, maxHR: 171, cadence: 159, calories: 263, elevationGain: 16, elevationLoss: 19, comment: '중간에 비가와서 제대로 마치지 못한 러닝' },
+    { date: '2024-07-09', type: 'Short Rain Run', distance: 2.77, time: '16:16', pace: '5:52', avgHR: 164, maxHR: 178, cadence: 178, calories: 208, elevationGain: 1, elevationLoss: 5, comment: '폭우가 쏟아져서 갑자기 마쳐버린 러닝' }
+];
+
+    // 여기서부터 기존의 JavaScript 코드가 이어집니다...
+    function renderRecords() {
+        // ...
+    }
+
+        function renderRecords() {
+            const monthlyRecordsContainer = document.getElementById('monthlyRecords');
+            monthlyRecordsContainer.innerHTML = '';
+
+            const groupedRecords = groupRecordsByMonth(runningRecords);
+
+            for (const [month, records] of Object.entries(groupedRecords)) {
+                const monthAccordion = document.createElement('div');
+                monthAccordion.classList.add('month-accordion');
+
+                const monthHeader = document.createElement('div');
+                monthHeader.classList.add('month-header');
+                monthHeader.innerHTML = `${month} <i class="fas fa-chevron-down"></i>`;
+                monthHeader.onclick = () => toggleMonthRecords(month);
+
+                const monthRecords = document.createElement('div');
+                monthRecords.classList.add('month-records');
+                monthRecords.id = `records-${month}`;
+
+                records.forEach(record => {
+                    const card = createRecordCard(record);
+                    monthRecords.appendChild(card);
+                });
+
+                monthAccordion.appendChild(monthHeader);
+                monthAccordion.appendChild(monthRecords);
+                monthlyRecordsContainer.appendChild(monthAccordion);
+            }
+        }
+
+        function groupRecordsByMonth(records) {
+            return records.reduce((groups, record) => {
+                const date = new Date(record.date);
+                const month = date.toLocaleString('default', { month: 'long', year: 'numeric' });
+                if (!groups[month]) {
+                    groups[month] = [];
+                }
+                groups[month].push(record);
+                return groups;
+            }, {});
+        }
+
+        function toggleMonthRecords(month) {
+            const recordsElement = document.getElementById(`records-${month}`);
+            recordsElement.classList.toggle('active');
+            const icon = recordsElement.previousElementSibling.querySelector('i');
+            icon.classList.toggle('fa-chevron-down');
+            icon.classList.toggle('fa-chevron-up');
+        }
+
+        function createRecordCard(record) {
+            const card = document.createElement('div');
+            card.classList.add('record-card');
+            card.style.animation = 'fadeInUp 0.8s forwards';
+
+            card.innerHTML = `
+                <div class="record-date">${record.date}</div>
+                <div class="record-details">
+                    <div class="record-detail"><span>유형:</span> ${record.type}</div>
+                    <div class="record-detail"><span>거리:</span> ${record.distance}km</div>
+                    <div class="record-detail"><span>시간:</span> ${record.time}</div>
+                    <div class="record-detail"><span>페이스:</span> ${record.pace}/km</div>
+                    <div class="record-detail"><span>평균 심박수:</span> ${record.avgHR}bpm</div>
+                    <div class="record-detail"><span>최대 심박수:</span> ${record.maxHR}bpm</div>
+                    <div class="record-detail"><span>케이던스:</span> ${record.cadence}spm</div>
+                    ${record.calories ? `<div class="record-detail"><span>칼로리:</span> ${record.calories}kcal</div>` : ''}
+                    ${record.elevationGain ? `<div class="record-detail"><span>고도 상승:</span> ${record.elevationGain}m</div>` : ''}
+                    ${record.elevationLoss ? `<div class="record-detail"><span>고도 하강:</span> ${record.elevationLoss}m</div>` : ''}
+                    ${record.comment ? `<div class="record-detail"><span>코멘트:</span> ${record.comment}</div>` : ''}
+                </div>
+                <button class="delete-record" onclick="deleteRecord('${record.date}')"><i class="fas fa-trash"></i></button>
+            `;
+
+            return card;
+        }
+
+        function openModal() {
+            document.getElementById('recordModal').classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('recordModal').classList.remove('show');
+        }
+
+        function calculatePace(distance, time) {
+            const [minutes, seconds] = time.split(':').map(Number);
+            const totalMinutes = minutes + seconds / 60;
+            const paceMinutes = Math.floor(totalMinutes / distance);
+            const paceSeconds = Math.round((totalMinutes / distance - paceMinutes) * 60);
+            return `${paceMinutes}:${paceSeconds.toString().padStart(2, '0')}`;
+        }
+
+        document.getElementById('time').addEventListener('input', function() {
+            const distance = document.getElementById('distance').value;
+            const time = this.value;
+            if (distance && time) {
+                const pace = calculatePace(distance, time);
+                document.getElementById('pace').value = pace;
+            }
+        });
+
+        document.getElementById('recordForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const newRecord = {
+                date: document.getElementById('date').value,
+                type: document.getElementById('type').value,
+                distance: parseFloat(document.getElementById('distance').value),
+                time: document.getElementById('time').value,
+                pace: document.getElementById('pace').value,
+                avgHR: parseInt(document.getElementById('avgHR').value),
+                maxHR: parseInt(document.getElementById('maxHR').value),
+                cadence: parseInt(document.getElementById('cadence').value),
+                calories: parseInt(document.getElementById('calories').value) || null,
+                elevationGain: parseInt(document.getElementById('elevationGain').value) || null,
+                elevationLoss: parseInt(document.getElementById('elevationLoss').value) || null,
+                comment: document.getElementById('comment').value
+            };
+            
+            // 서버에 데이터 저장 (예시 코드, 실제 서버 엔드포인트로 교체 필요)
+            fetch('/api/saveRecord', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(newRecord),
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+                runningRecords.push(newRecord);
+                renderRecords();
+                closeModal();
+                this.reset();
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                alert('기록 저장에 실패했습니다. 다시 시도해주세요.');
+            });
+        });
+
+        function deleteRecord(date) {
+            const password = prompt("기록을 삭제하려면 비밀번호를 입력하세요:");
+            if (password === "0920") {
+                // 서버에서 데이터 삭제 (예시 코드, 실제 서버 엔드포인트로 교체 필요)
+                fetch(`/api/deleteRecord/${date}`, {
+                    method: 'DELETE',
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Success:', data);
+                    runningRecords = runningRecords.filter(record => record.date !== date);
+                    renderRecords();
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                    alert('기록 삭제에 실패했습니다. 다시 시도해주세요.');
+                });
+            } else {
+                alert("비밀번호가 틀렸습니다. 삭제할 수 없습니다.");
+            }
+        }
+
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        darkModeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            darkModeToggle.innerHTML = document.body.classList.contains('dark-mode') ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+        });
+
+        // 초기 렌더링
+        renderRecords();
+    </script>
+</body>
+</html>
